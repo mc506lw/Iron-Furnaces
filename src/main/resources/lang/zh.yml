@@ -1,0 +1,149 @@
+addon: "Iron Furnaces"
+
+item:
+  rainbow_core:
+    name: "<light_purple>彩虹核心"
+    lore: |-
+      <gray>用于合成高级熔炉的核心材料
+
+  rainbow_shell:
+    name: "<light_purple>彩虹外壳"
+    lore: |-
+      <gray>用于保护彩虹核心的外壳材料
+
+  rainbow_coal:
+    name: "<light_purple>彩虹煤炭"
+    lore: |-
+      <gray>高效的彩虹燃料，燃烧时间是普通煤炭的10倍
+
+  rainbow_connector:
+    name: "<light_purple>彩虹连接器"
+    lore: |-
+      <gray>用于连接彩虹组件的特殊物品"
+
+  blast_upgrade:
+    name: "<yellow>高炉组件"
+    lore: |-
+      <gray>允许熔炉以2倍速度熔炼矿石类物品
+      <gray>(如铁矿石→铁锭)
+
+  smoker_upgrade:
+    name: "<green>烟熏炉组件"
+    lore: |-
+      <gray>允许熔炉以2倍速度烹饪食物类物品
+
+  speed_upgrade:
+    name: "<aqua>速度升级"
+    lore: |-
+      <gray>提升熔炉50%的烧炼速度
+      <gray>可叠加使用
+
+  fuel_upgrade:
+    name: "<gold>燃料升级"
+    lore: |-
+      <gray>提升燃料效率25%
+      <gray>可叠加使用
+
+  industrial_upgrade:
+    name: "<gray>工业升级"
+    lore: |-
+      <gray>增加输出槽位到3个
+      <gray>支持自动化输出
+
+  generator_upgrade:
+    name: "<red>发电机升级"
+    lore: |-
+      <gray>将多余热量转化为能量
+      <gray>为周围机器供电"
+
+  copper_furnace:
+    name: "<gold>铜熔炉"
+    lore: |-
+      <gray>基础熔炉，烧炼速度180tick/物品
+
+  iron_furnace:
+    name: "<gray>铁熔炉"
+    lore: |-
+      <gray>进阶熔炉，烧炼速度160tick/物品
+
+  gold_furnace:
+    name: "<yellow>金熔炉"
+    lore: |-
+      <gray>高级熔炉，烧炼速度120tick/物品
+
+  diamond_furnace:
+    name: "<aqua>钻石熔炉"
+    lore: |-
+      <gray>稀有熔炉，烧炼速度80tick/物品
+
+  emerald_furnace:
+    name: "<green>绿宝石熔炉"
+    lore: |-
+      <gray>珍贵熔炉，烧炼速度40tick/物品
+      <gray>与水晶熔炉同级
+
+  crystal_furnace:
+    name: "<light_purple>水晶熔炉"
+    lore: |-
+      <gray>晶莹剔透的熔炉，烧炼速度40tick/物品
+      <gray>与绿宝石熔炉同级
+
+  obsidian_furnace:
+    name: "<dark_purple>黑曜石熔炉"
+    lore: |-
+      <gray>坚硬无比的熔炉，烧炼速度20tick/物品
+
+  netherite_furnace:
+    name: "<red>下界合金熔炉"
+    lore: |-
+      <gray>终极熔炉，烧炼速度5tick/物品
+
+  rainbow_furnace:
+    name: "<light_purple>彩虹熔炉"
+    lore: |-
+      <gray>传说级熔炉，每次可烧炼64个物品
+      <gray>烧炼速度20tick/组
+
+gui:
+  upgrade:
+    name: "<yellow>⚙ 升级"
+    lore: "<gray><insn>点击</insn>打开升级界面"
+  
+  fuel_status:
+    name: "<gold>🔥 燃料"
+    lore: "<arrow> %fuel%"
+  
+  smelt_progress:
+    name: "<yellow>⚒ 烧炼中"
+    lore: "<gray>速度: <white>%speed% <gray>(对比原版熔炉)"
+  
+  no_fuel: "<gray>无燃料"
+  
+  upgrade_red:
+    name: "<red>🔴 特殊烧炼"
+    lore: "<gray>高炉/烟熏炉组件"
+  
+  upgrade_green:
+    name: "<green>🟢 效率提升"
+    lore: "<gray>速度/燃料升级"
+  
+  upgrade_blue:
+    name: "<blue>🔵 扩展功能"
+    lore: "<gray>工业/发电机升级"
+  
+  back_button:
+    name: "<gray>← 返回"
+    lore: ""
+  
+  no_fuel: "<gray>无燃料"
+  no_item: "<gray>无物品"
+
+message:
+  upgrade_success: "<green>成功升级为 %furnace%!"
+  upgrade_failed: "<red>升级失败！请检查材料是否齐全。"
+  upgrade_already_max: "<yellow>该熔炉已是最高等级。"
+  install_upgrade: "<green>成功安装 %upgrade% 组件！"
+  remove_upgrade: "<yellow>已移除 %upgrade% 组件。"
+  furnace_not_found: "<red>这不是一个有效的熔炉。"
+  upgrade_opened: "<green>[Iron Furnaces] <gray>已打开升级界面"
+  returned: "<gray>[Iron Furnaces] 已返回"
