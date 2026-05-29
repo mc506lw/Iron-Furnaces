@@ -19,6 +19,7 @@ class IronFurnaces : JavaPlugin(), RebarAddon {
 
         IronFurnaceItems.initialize()
         IronFurnaceBlocks.initialize()
+        FurnaceRecipes.initialize()
         IronFurnacePages.initialise()
     }
 
