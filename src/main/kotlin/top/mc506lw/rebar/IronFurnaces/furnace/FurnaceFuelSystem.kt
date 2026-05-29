@@ -29,6 +29,12 @@ class FurnaceFuelSystem(
         internal set
     private var burningFuelType: Material? = null
 
+    var fuelConsumptionRate: Double = 1.0
+    var speedMultiplier: Double = 1.0
+
+    val totalSpeedMultiplier: Double
+        get() = furnaceTier.speedMultiplier * speedMultiplier
+
     val fuelProgressItem = ProgressItem(GuiItems.background())
 
     private val noFuelDisplay = ItemStackBuilder
@@ -65,22 +71,38 @@ class FurnaceFuelSystem(
             fuelInv.setItem(io.github.pylonmc.rebar.util.MachineUpdateReason(), 0, null)
         }
 
-        currentFuelTime = (fuelTime * fuelEfficiency).toInt()
+        currentFuelTime = ((fuelTime * fuelEfficiency) / totalSpeedMultiplier).toInt().coerceAtLeast(1)
         fuelRemaining = currentFuelTime
         burningFuelType = fuelStack.type
+
+        clearDisplayTimer = 0
 
         updateFuelProgressDisplay()
     }
 
+    private var clearDisplayTimer = 0
+
     fun updateFuelState(tickInterval: Int) {
+        if (clearDisplayTimer > 0) {
+            clearDisplayTimer--
+            if (clearDisplayTimer == 0) {
+                fuelProgressItem.setTotalTimeTicks(null)
+                fuelProgressItem.setItem(GuiItems.background())
+            }
+            fuelProgressItem.notifyWindows()
+            return
+        }
+
         if (fuelRemaining > 0) {
-            fuelRemaining -= tickInterval
+            val actualConsumption = (tickInterval * fuelConsumptionRate).toInt().coerceAtLeast(1)
+            fuelRemaining -= actualConsumption
 
             if (fuelRemaining <= 0) {
                 fuelRemaining = 0
                 burningFuelType = null
-                fuelProgressItem.setTotalTimeTicks(null)
-                fuelProgressItem.setItem(noFuelDisplay)
+                fuelProgressItem.setTotalTimeTicks(currentFuelTime)
+                fuelProgressItem.setRemainingTimeTicks(0)
+                clearDisplayTimer = 2
             } else {
                 fuelProgressItem.setTotalTimeTicks(currentFuelTime)
                 fuelProgressItem.setRemainingTimeTicks(fuelRemaining)

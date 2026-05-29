@@ -4,7 +4,7 @@ import org.bukkit.NamespacedKey
 
 object IronFurnaceKeys {
 
-    private fun key(name: String): NamespacedKey = NamespacedKey("ironfurnaces", name)
+    fun key(name: String) = NamespacedKey("ironfurnaces", name)
 
     val RAINBOW_CORE = key("rainbow_core")
     val RAINBOW_SHELL = key("rainbow_shell")

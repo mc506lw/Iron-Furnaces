@@ -39,14 +39,16 @@ open class FurnaceDisplayRenderer(
     }
 
     private var wasBurning = false
+    private var currentBlockType: String = "furnace"
 
-    open fun createFrontFace() {
+    open fun createFrontFace(blockType: String = "furnace") {
         if (getEntity(FRONT_FACE_ENTITY_NAME) != null) return
 
+        currentBlockType = blockType
         val centerLoc = block.location.toCenterLocation()
         val facing = getFacing()
         val facingStr = facing.name.lowercase()
-        val blockData = org.bukkit.Bukkit.createBlockData("minecraft:furnace[lit=false,facing=$facingStr]")
+        val blockData = org.bukkit.Bukkit.createBlockData("minecraft:$blockType[lit=false,facing=$facingStr]")
 
         val display = BlockDisplayBuilder()
             .blockData(blockData)
@@ -64,21 +66,41 @@ open class FurnaceDisplayRenderer(
         entity.setTransformationMatrix(getFrontFaceTransformation(getFacing()).buildForBlockDisplay())
     }
 
-    open fun updateBurningState(isBurning: Boolean) {
+    open fun updateBurningState(isBurning: Boolean, blockType: String? = null) {
         val entityUuid = getEntity(FRONT_FACE_ENTITY_NAME) ?: return
         val entity = block.world.getEntity(entityUuid) as? BlockDisplay ?: return
 
-        if (isBurning == wasBurning) return
+        if (isBurning == wasBurning && (blockType == null || blockType == currentBlockType)) return
         wasBurning = isBurning
+
+        val effectiveBlockType = blockType ?: currentBlockType
+        if (blockType != null && blockType != currentBlockType) {
+            currentBlockType = blockType
+        }
 
         val litStr = if (isBurning) "true" else "false"
         val facingStr = getFacing().name.lowercase()
-        entity.block = org.bukkit.Bukkit.createBlockData("minecraft:furnace[lit=$litStr,facing=$facingStr]")
+        entity.block = org.bukkit.Bukkit.createBlockData("minecraft:$effectiveBlockType[lit=$litStr,facing=$facingStr]")
+    }
+
+    open fun updateDisplayType(blockType: String) {
+        if (blockType == currentBlockType) return
+
+        currentBlockType = blockType
+        val entityUuid = getEntity(FRONT_FACE_ENTITY_NAME) ?: return
+        val entity = block.world.getEntity(entityUuid) as? BlockDisplay ?: return
+
+        val litStr = if (wasBurning) "true" else "false"
+        val facingStr = getFacing().name.lowercase()
+        entity.block = org.bukkit.Bukkit.createBlockData("minecraft:$blockType[lit=$litStr,facing=$facingStr]")
     }
 
     open fun resetState() {
         wasBurning = false
+        currentBlockType = "furnace"
     }
+
+    open fun getCurrentBlockType(): String = currentBlockType
 
     open fun createAdditionalEffects() {}
 }

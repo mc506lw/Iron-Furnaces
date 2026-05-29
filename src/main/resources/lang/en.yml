@@ -1,5 +1,9 @@
 addon: "Iron Furnaces"
 
+guide:
+  page:
+    ironfurnaces: "<yellow>Iron Furnaces"
+
 item:
   rainbow_core:
     name: "<d>Rainbow Core"
@@ -19,7 +23,7 @@ item:
   rainbow_connector:
     name: "<d>Rainbow Connector"
     lore: |-
-      <gray>Special item for connecting Rainbow components
+      <gray>Special item for connecting Rainbow components"
 
   blast_upgrade:
     name: "<e>Blast Furnace Component"
@@ -104,17 +108,9 @@ item:
       <gray>Legendary furnace, smelts 64 items at once
       <gray>Smelting speed: 20 ticks/batch
 
-message:
-  upgrade_success: "<green>Successfully upgraded to %furnace%!"
-  upgrade_failed: "<red>Upgrade failed! Check your materials."
-  upgrade_already_max: "<yellow>This furnace is already max level."
-  install_upgrade: "<green>Successfully installed %upgrade% component!"
-  remove_upgrade: "<yellow>Removed %upgrade% component."
-  furnace_not_found: "<red>This is not a valid furnace."
-  upgrade_opened: "<green>Opened upgrade panel"
-  returned: "<yellow>Returned to main panel"
-
 gui:
+  title: "<yellow>Furnace"
+
   upgrade:
     name: "<yellow>⚙ Upgrades"
     lore: "<gray><insn>Click</insn> to open upgrade panel"
@@ -143,3 +139,13 @@ gui:
   upgrade_blue:
     name: "<blue>🔵 Extensions"
     lore: "<gray>Industrial / Generator upgrade"
+
+  no_item: "<gray>No items"
+
+message:
+  upgrade_success: "<green>Successfully upgraded to %furnace%!"
+  upgrade_failed: "<red>Upgrade failed! Check your materials."
+  upgrade_already_max: "<yellow>This furnace is already max level."
+  install_upgrade: "<green>Successfully installed %upgrade% component!"
+  remove_upgrade: "<yellow>Removed %upgrade% component."
+  furnace_not_found: "<red>This is not a valid furnace."

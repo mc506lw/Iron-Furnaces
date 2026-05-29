@@ -18,7 +18,7 @@ class CrystalFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 
     companion object {

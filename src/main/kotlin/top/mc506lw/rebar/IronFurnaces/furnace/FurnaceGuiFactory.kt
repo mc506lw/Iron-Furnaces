@@ -38,11 +38,10 @@ open class FurnaceGuiFactory(
                 if (clickType.isLeftClick) {
                     Window.builder()
                         .setUpperGui(createUpgradeGui())
-                        .setTitle(furnace.guiTitle)
+                        .setTitle(furnace.getGuiTitle())
                         .setViewer(player)
                         .build()
                         .open()
-                    player.sendMessage(Component.translatable("ironfurnaces.message.upgrade_opened"))
                 }
             }
         }
@@ -87,11 +86,10 @@ open class FurnaceGuiFactory(
                 if (clickType.isLeftClick) {
                     Window.builder()
                         .setUpperGui(createMainGui())
-                        .setTitle(furnace.guiTitle)
+                        .setTitle(furnace.getGuiTitle())
                         .setViewer(player)
                         .build()
                         .open()
-                    player.sendMessage(Component.translatable("ironfurnaces.message.returned"))
                 }
             }
         }

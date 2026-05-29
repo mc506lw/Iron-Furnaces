@@ -14,7 +14,7 @@ class CopperFurnace(block: Block, context: BlockCreateContext) : AbstractIronFur
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }
 
@@ -27,7 +27,7 @@ class IronFurnaceImpl(block: Block, context: BlockCreateContext) : AbstractIronF
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }
 
@@ -40,7 +40,7 @@ class GoldFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurna
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }
 
@@ -53,7 +53,7 @@ class DiamondFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }
 
@@ -66,7 +66,7 @@ class EmeraldFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }
 
@@ -79,7 +79,7 @@ class ObsidianFurnace(block: Block, context: BlockCreateContext) : AbstractIronF
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }
 
@@ -92,6 +92,6 @@ class NetheriteFurnace(block: Block, context: BlockCreateContext) : AbstractIron
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     )
 }

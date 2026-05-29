@@ -1,7 +1,7 @@
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
-    kotlin("jvm") version "2.3.0"
+    kotlin("jvm") version "2.3.10"
     idea
     id("com.gradleup.shadow") version "9.2.2"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
@@ -20,19 +20,22 @@ repositories {
     maven("https://repo.xenondevs.xyz/releases") {
         name = "InvUI"
     }
+    maven("https://repo.codemc.io/repository/maven-releases/") {
+        name = "CodeMC"
+    }
 }
 
 val rebarVersion = project.properties["rebar.version"] as String
 val minecraftVersion = project.properties["minecraft.version"] as String
 
 dependencies {
-    // Paper Dev Bundle (包含 API + NMS，26.1+ 不再混淆)
+    // Paper Dev Bundle ( API + NMS，26.1+ )
     paperweight.paperDevBundle("26.1.2.build.+")
     
-    // 使用本地 Rebar jar（未发布到 Maven 仓库）
-    compileOnly(files("libs/rebar-$rebarVersion.jar"))
+    // Rebar
+    compileOnly("io.github.pylonmc:rebar:$rebarVersion")
     
-    // InvUI (rebar 依赖)
+    // InvUI
     compileOnly("xyz.xenondevs.invui:invui:2.1.0")
     
     compileOnly(kotlin("stdlib"))
@@ -46,19 +49,18 @@ idea {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_26
-    targetCompatibility = JavaVersion.VERSION_26
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 kotlin {
-    jvmToolchain(26)
+    jvmToolchain(25)
 }
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
     
-    // 统一 JVM target 为 25（兼容性最佳）
     options.release.set(25)
 }
 
@@ -87,7 +89,6 @@ bukkit {
     authors = listOf("mc506lw")
 }
 
-// 26.1+ 使用 Mojang 映射（不再混淆）
 paperweight {
     reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
 }

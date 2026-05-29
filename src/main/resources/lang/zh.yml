@@ -1,5 +1,9 @@
 addon: "Iron Furnaces"
 
+guide:
+  page:
+    ironfurnaces: "<yellow>Iron Furnaces"
+
 item:
   rainbow_core:
     name: "<light_purple>彩虹核心"
@@ -105,37 +109,38 @@ item:
       <gray>烧炼速度20tick/组
 
 gui:
+  title: "<yellow>熔炉界面"
+
   upgrade:
     name: "<yellow>⚙ 升级"
     lore: "<gray><insn>点击</insn>打开升级界面"
-  
+
   fuel_status:
     name: "<gold>🔥 燃料"
     lore: "<arrow> %fuel%"
-  
+
   smelt_progress:
     name: "<yellow>⚒ 烧炼中"
     lore: "<gray>速度: <white>%speed% <gray>(对比原版熔炉)"
-  
+
   no_fuel: "<gray>无燃料"
-  
+
   upgrade_red:
     name: "<red>🔴 特殊烧炼"
     lore: "<gray>高炉/烟熏炉组件"
-  
+
   upgrade_green:
     name: "<green>🟢 效率提升"
     lore: "<gray>速度/燃料升级"
-  
+
   upgrade_blue:
     name: "<blue>🔵 扩展功能"
     lore: "<gray>工业/发电机升级"
-  
+
   back_button:
     name: "<gray>← 返回"
     lore: ""
-  
-  no_fuel: "<gray>无燃料"
+
   no_item: "<gray>无物品"
 
 message:
@@ -145,5 +150,3 @@ message:
   install_upgrade: "<green>成功安装 %upgrade% 组件！"
   remove_upgrade: "<yellow>已移除 %upgrade% 组件。"
   furnace_not_found: "<red>这不是一个有效的熔炉。"
-  upgrade_opened: "<green>[Iron Furnaces] <gray>已打开升级界面"
-  returned: "<gray>[Iron Furnaces] 已返回"

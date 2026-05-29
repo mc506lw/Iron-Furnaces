@@ -21,13 +21,13 @@ class RainbowFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
 ) {
     constructor(block: Block, pdc: PersistentDataContainer) : this(
         block,
-        BlockCreateContext.Default(block)
+        BlockCreateContext.Default(null, block)
     ) {
         colorIndex = pdc.get(COLOR_INDEX_KEY, PersistentDataType.INTEGER) ?: 0
         colorTickCounter = pdc.get(COLOR_TICK_KEY, PersistentDataType.INTEGER) ?: 0
     }
 
-    override val outputInv = VirtualInventory(1)
+    override var outputInv = VirtualInventory(1)
 
     init {
         speedMultiplier = 3.2
@@ -99,12 +99,10 @@ class RainbowFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
         super.tick()
 
         colorTickCounter++
-        LOGGER.info("[彩虹熔炉] ${block.location} tick: colorTickCounter=$colorTickCounter, colorIndex=$colorIndex, blockType=${block.type}")
         if (colorTickCounter >= 10) {
             colorTickCounter = 0
             colorIndex = (colorIndex + 1) % woolColors.size
             block.type = woolColors[colorIndex]
-            LOGGER.info("[彩虹熔炉] ${block.location} 变色为 ${woolColors[colorIndex]}")
         }
     }
 
@@ -148,10 +146,6 @@ class RainbowFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
 
         if (!isProcessingRecipe) {
             recipeProgressItem.setItem(io.github.pylonmc.rebar.util.gui.GuiItems.background())
-        }
-
-        if (processed > 1) {
-            LOGGER.info("[彩虹熔炉] ${block.location} 批量处理: $processed 个物品")
         }
     }
 }

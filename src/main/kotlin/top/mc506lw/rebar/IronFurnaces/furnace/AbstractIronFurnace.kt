@@ -34,11 +34,10 @@ import xyz.xenondevs.invui.window.Window
 abstract class AbstractIronFurnace(
     block: Block,
     context: BlockCreateContext,
-    val furnaceTier: FurnaceTier,
-    val baseMaterial: Material,
-    private val guiMaterial: Material = Material.FURNACE
-) : RebarBlock(block, context),
-    RebarGuiBlock,
+    furnaceTier: FurnaceTier,
+    baseMaterial: Material,
+    guiMaterial: Material = Material.FURNACE
+) : IronFurnaceBase(block, context, furnaceTier, baseMaterial, guiMaterial),
     RebarVirtualInventoryBlock,
     RebarDirectionalBlock,
     RebarTickingBlock,
@@ -46,7 +45,8 @@ abstract class AbstractIronFurnace(
     RebarFurnace,
     RebarRecipeProcessor<FurnaceRecipeWrapper>,
     RebarEntityHolderBlock,
-    RebarBreakHandler {
+    RebarBreakHandler,
+    RebarInteractBlock {
 
     companion object {
         private val LOGGER = java.util.logging.Logger.getLogger("IronFurnace")
@@ -58,17 +58,25 @@ abstract class AbstractIronFurnace(
         furnaceTier: FurnaceTier,
         baseMaterial: Material,
         guiMaterial: Material = Material.FURNACE
-    ) : this(block, BlockCreateContext.Default(block), furnaceTier, baseMaterial, guiMaterial)
+    ) : this(block, BlockCreateContext.Default(null, block), furnaceTier, baseMaterial, guiMaterial)
 
     override var disableBlockTextureEntity = true
 
     protected open val inputInv = VirtualInventory(1)
-    protected open val outputInv = VirtualInventory(1)
+    protected open var outputInv = VirtualInventory(1)
     protected open val fuelInv = VirtualInventory(1)
 
     protected val upgradeRedSlot = VirtualInventory(1)
     protected val upgradeGreenSlot = VirtualInventory(1)
     protected val upgradeBlueSlot = VirtualInventory(1)
+
+    protected val upgradeManager: UpgradeEffectManager by lazy {
+        UpgradeEffectManager(upgradeRedSlot, upgradeGreenSlot, upgradeBlueSlot)
+    }
+
+    protected val energySystem: FurnaceEnergySystem by lazy {
+        FurnaceEnergySystem(block)
+    }
 
     protected val fuelSystem: FurnaceFuelSystem by lazy {
         FurnaceFuelSystem(block, furnaceTier, fuelInv, inputInv)
@@ -104,7 +112,7 @@ abstract class AbstractIronFurnace(
 
     init {
         setRecipeType(FurnaceRecipeType)
-        recipeProgressItem = ProgressItem(GuiItems.background(), true)
+        recipeProgressItem = InvertedProgressItem(GuiItems.background())
 
         if (context is BlockCreateContext.PlayerPlace) {
             facing = context.facing
@@ -121,8 +129,12 @@ abstract class AbstractIronFurnace(
         get() = fuelSystem.fuelEfficiency
         set(value) { fuelSystem.fuelEfficiency = value }
 
-    open var speedMultiplier: Double = 1.0
-        protected set
+    var speedMultiplier: Double
+        get() {
+            val effects = upgradeManager.calculateEffects()
+            return effects.speedMultiplier
+        }
+        protected set(value) {}
 
     var currentFuelTime: Int
         get() = fuelSystem.currentFuelTime
@@ -134,7 +146,8 @@ abstract class AbstractIronFurnace(
 
     private val speedLabel: String
         get() {
-            val effectiveTime = (furnaceTier.smeltTimePerItem / speedMultiplier).toInt().coerceAtLeast(1)
+            val effects = upgradeManager.calculateEffects()
+            val effectiveTime = (furnaceTier.smeltTimePerItem * effects.smeltTimeModifier).toInt().coerceAtLeast(1)
             val mult = 200.0 / effectiveTime
             return "%.1fx".format(mult).replace(".0x", "x")
         }
@@ -144,7 +157,7 @@ abstract class AbstractIronFurnace(
 
     override fun postInitialise() {
         createLogisticGroup("input", LogisticGroupType.INPUT, inputInv)
-        createLogisticGroup("output", LogisticGroupType.OUTPUT, outputInv)
+        createLogisticGroup("output", LogisticGroupType.INPUT, outputInv)
 
         outputInv.addPreUpdateHandler { event ->
             if (!event.isRemove && event.updateReason is xyz.xenondevs.invui.inventory.event.PlayerUpdateReason) {
@@ -158,20 +171,66 @@ abstract class AbstractIronFurnace(
             }
         }
 
+        setupUpgradeSlots()
         setupBlockType()
-        displayRenderer.createFrontFace()
-        displayRenderer.updateBurningState(fuelSystem.isBurning)
+
+        val displayType = upgradeManager.getDisplayBlockType()
+        displayRenderer.createFrontFace(displayType)
+        displayRenderer.updateBurningState(fuelSystem.isBurning, displayType)
+    }
+
+    private fun setupUpgradeSlots() {
+        val updateHandler: () -> Unit = {
+            onUpgradesChanged()
+        }
+
+        upgradeRedSlot.addPreUpdateHandler { event -> validateUpgradePlacement(event, 0) }
+        upgradeRedSlot.addPostUpdateHandler { updateHandler() }
+
+        upgradeGreenSlot.addPreUpdateHandler { event -> validateUpgradePlacement(event, 1) }
+        upgradeGreenSlot.addPostUpdateHandler { updateHandler() }
+
+        upgradeBlueSlot.addPreUpdateHandler { event -> validateUpgradePlacement(event, 2) }
+        upgradeBlueSlot.addPostUpdateHandler { updateHandler() }
+    }
+
+    protected open fun onUpgradesChanged() {
+        upgradeManager.invalidateCache()
+        applyUpgradeEffects()
+        updateDisplayForUpgrades()
+    }
+
+    protected open fun applyUpgradeEffects() {
+        val effects = upgradeManager.calculateEffects()
+
+        fuelSystem.fuelConsumptionRate = effects.fuelConsumptionRate
+        fuelSystem.fuelEfficiency = effects.fuelEfficiencyBonus
+        fuelSystem.speedMultiplier = effects.speedMultiplier
+
+        if (effects.outputSlots != outputInv.size) {
+            outputInv = VirtualInventory(effects.outputSlots)
+        }
+    }
+
+    protected open fun updateDisplayForUpgrades() {
+        val displayType = upgradeManager.getDisplayBlockType()
+        displayRenderer.updateDisplayType(displayType)
     }
 
     override fun postLoad() {
         super.postLoad()
         displayRenderer.resetState()
         setupBlockType()
+
+        val displayType = upgradeManager.getDisplayBlockType()
         displayRenderer.updateFrontFace()
-        displayRenderer.updateBurningState(fuelSystem.isBurning)
+        displayRenderer.updateBurningState(fuelSystem.isBurning, displayType)
+
         if (!isProcessingRecipe) {
             recipeProgressItem.setItem(GuiItems.background())
         }
+
+        applyUpgradeEffects()
     }
 
     protected open fun setupBlockType() {
@@ -183,11 +242,20 @@ abstract class AbstractIronFurnace(
     }
 
     override fun tick() {
-        fuelSystem.consumeFuel()
+        val effects = upgradeManager.calculateEffects()
 
-        fuelSystem.updateFuelState(tickInterval)
+        when (effects.mode) {
+            FurnaceMode.GENERATOR_ONLY,
+            FurnaceMode.GENERATOR_BLAST,
+            FurnaceMode.GENERATOR_SMOKER -> handleGeneratorTick(effects)
+            else -> handleNormalTick(effects)
+        }
 
-        fuelSystem.consumeFuel()
+        displayRenderer.updateBurningState(fuelSystem.isBurning, upgradeManager.getDisplayBlockType())
+    }
+
+    private fun handleNormalTick(effects: UpgradeEffects) {
+        if (!effects.canSmelt) return
 
         if (isProcessingRecipe) {
             val input = inputInv.getItem(0)
@@ -199,37 +267,87 @@ abstract class AbstractIronFurnace(
 
         tryStartSmelting()
 
-        if (isProcessingRecipe && fuelSystem.isBurning) {
-            progressRecipe(tickInterval)
-            spawnSmokeParticle()
+        if (!effects.usesEnergy) {
+            if (fuelSystem.isBurning) {
+                fuelSystem.updateFuelState(tickInterval)
+            } else if (isProcessingRecipe) {
+                fuelSystem.consumeFuel()
+                fuelSystem.updateFuelState(tickInterval)
+            } else {
+                fuelSystem.updateFuelState(tickInterval)
+            }
         }
 
-        displayRenderer.updateBurningState(fuelSystem.isBurning)
+        if (isProcessingRecipe && (effects.usesEnergy || fuelSystem.isBurning)) {
+            progressRecipe(tickInterval)
+            spawnSmokeParticle()
+        } else if (!fuelSystem.isBurning && isProcessingRecipe) {
+            stopRecipe()
+            recipeProgressItem.setItem(GuiItems.background())
+        }
+    }
+
+    private fun handleIndustrialEnergyTick(effects: UpgradeEffects) {
+        val energyRequired = 10.0 * tickInterval
+        if (energySystem.consumeEnergy(energyRequired)) {
+            if (fuelRemaining <= 0) {
+                fuelRemaining = Int.MAX_VALUE / 2
+                currentFuelTime = fuelRemaining
+            }
+        } else {
+            if (fuelRemaining > 0) {
+                fuelRemaining = 0
+            }
+        }
+    }
+
+    private fun handleGeneratorTick(effects: UpgradeEffects) {
+        if (fuelSystem.isBurning) {
+            val heatAmount = tickInterval.toDouble()
+            val energyProduced = energySystem.convertHeatToEnergy(
+                heatAmount,
+                effects.generatorPowerMultiplier
+            )
+
+            val speedModifier = effects.generatorSpeedMultiplier
+            val adjustedTickInterval = (tickInterval * speedModifier).toInt().coerceAtLeast(1)
+
+            for (i in 0 until adjustedTickInterval) {
+                fuelSystem.updateFuelState(1)
+            }
+        } else {
+            fuelSystem.consumeFuel()
+            fuelSystem.updateFuelState(tickInterval)
+        }
     }
 
     open fun tryStartSmelting() {
         if (isProcessingRecipe) return
 
+        val effects = upgradeManager.calculateEffects()
+        if (!effects.canSmelt) return
+
         val stack = inputInv.getItem(0)
         if (stack == null || stack.isEmpty()) return
 
-        if (fuelRemaining <= 0) {
-            LOGGER.fine("[${furnaceTier.name}] ${block.location} 无法烧制: fuelRemaining=$fuelRemaining")
-            return
-        }
-
-        if (lastRecipe != null && tryStartSmelting(lastRecipe!!, stack)) return
+        if (lastRecipe != null && tryStartSmelting(lastRecipe!!, stack, effects)) return
 
         for (recipe in FurnaceRecipeType.recipes) {
-            if (tryStartSmelting(recipe, stack)) break
+            if (tryStartSmelting(recipe, stack, effects)) break
         }
     }
 
-    private fun tryStartSmelting(recipe: FurnaceRecipeWrapper, stack: ItemStack): Boolean {
+    private fun tryStartSmelting(recipe: FurnaceRecipeWrapper, stack: ItemStack, effects: UpgradeEffects): Boolean {
         if (!recipe.isInput(stack)) return false
+
+        if (!upgradeManager.isRecipeCompatible(RecipeDetector.detectRecipeCompatibility(stack))) {
+            LOGGER.fine("[${furnaceTier.name}] ${block.location} 配方不兼容当前模式: ${stack.type}")
+            return false
+        }
+
         if (!outputInv.canHold(recipe.recipe.result)) return false
 
-        val actualTime = (furnaceTier.smeltTimePerItem / speedMultiplier).toInt().coerceAtLeast(1)
+        val actualTime = (furnaceTier.smeltTimePerItem * effects.smeltTimeModifier).toInt().coerceAtLeast(1)
         val displaySpeed = rainbowSpeedLabel ?: speedLabel
 
         recipeProgressItem.setItem(
@@ -262,10 +380,51 @@ abstract class AbstractIronFurnace(
         event.isCancelled = true
     }
 
-    override fun createGui(): Gui = guiFactory.createMainGui()
+    fun createGui(): Gui = guiFactory.createMainGui()
+
+    fun getGuiTitle(): Component = Component.translatable("ironfurnaces.item.${furnaceTier.name.lowercase()}_furnace.name")
+
+    override fun onInteract(event: org.bukkit.event.player.PlayerInteractEvent, priority: org.bukkit.event.EventPriority) {
+        if (priority != org.bukkit.event.EventPriority.NORMAL) return
+        if (!event.action.isRightClick || event.hand != org.bukkit.inventory.EquipmentSlot.HAND) return
+
+        event.isCancelled = true
+
+        Window.builder()
+            .setUpperGui(createGui())
+            .setTitle(getGuiTitle())
+            .setViewer(event.player)
+            .build()
+            .open()
+    }
 
     override fun getWaila(player: Player): io.github.pylonmc.rebar.waila.WailaDisplay? {
         return io.github.pylonmc.rebar.waila.WailaDisplay(defaultWailaTranslationKey)
+    }
+
+    private fun validateUpgradePlacement(
+        event: xyz.xenondevs.invui.inventory.event.ItemPreUpdateEvent,
+        slotIndex: Int
+    ) {
+        val newItem = event.newItem
+        if (newItem == null || newItem.isEmpty()) return
+
+        val upgradeType = UpgradeEffectManager.getUpgradeType(newItem)
+
+        if (upgradeType == null) {
+            event.isCancelled = true
+            return
+        }
+
+        if (!UpgradeEffectManager.canPlaceInSlot(upgradeType, slotIndex)) {
+            event.isCancelled = true
+            return
+        }
+
+        if (UpgradeEffectManager.isDuplicateUpgrade(upgradeType, upgradeRedSlot, upgradeGreenSlot, upgradeBlueSlot)) {
+            event.isCancelled = true
+            return
+        }
     }
 
     override fun getVirtualInventories(): Map<String, VirtualInventory> = mapOf(
@@ -285,5 +444,35 @@ abstract class AbstractIronFurnace(
             0.1, 0.2, 0.1,
             0.01
         )
+    }
+}
+
+class InvertedProgressItem(
+    item: xyz.xenondevs.invui.item.Item
+) : ProgressItem(item, true) {
+
+    @Suppress("UnstableApiUsage")
+    override fun getItemProvider(viewer: org.bukkit.entity.Player): xyz.xenondevs.invui.item.ItemProvider {
+        if (totalTime == null) {
+            return super.getItemProvider(viewer)
+        }
+
+        val provider = super.getItemProvider(viewer)
+        val stack = provider.get()
+
+        val builder = io.github.pylonmc.rebar.item.builder.ItemStackBuilder.of(stack.clone())
+
+        val currentDamage = builder.get(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE) ?: 0
+        val maxDamage = builder.get(io.papermc.paper.datacomponent.DataComponentTypes.MAX_DAMAGE) ?: 1000
+
+        var invertedDamage = (maxDamage - currentDamage).coerceIn(0, maxDamage)
+
+        if (invertedDamage <= 1) {
+            invertedDamage = maxDamage
+        }
+
+        builder.set(io.papermc.paper.datacomponent.DataComponentTypes.DAMAGE, invertedDamage)
+
+        return builder
     }
 }

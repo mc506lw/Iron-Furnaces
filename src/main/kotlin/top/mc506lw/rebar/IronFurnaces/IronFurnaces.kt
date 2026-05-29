@@ -19,6 +19,7 @@ class IronFurnaces : JavaPlugin(), RebarAddon {
 
         IronFurnaceItems.initialize()
         IronFurnaceBlocks.initialize()
+        IronFurnacePages.initialise()
     }
 
     override val javaPlugin: JavaPlugin
