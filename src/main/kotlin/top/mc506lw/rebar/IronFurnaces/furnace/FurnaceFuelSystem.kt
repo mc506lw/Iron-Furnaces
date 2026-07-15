@@ -1,154 +1,225 @@
 package top.mc506lw.rebar.ironfurnaces.furnace
 
+import io.github.pylonmc.rebar.i18n.RebarArgument
 import io.github.pylonmc.rebar.item.builder.ItemStackBuilder
+import io.github.pylonmc.rebar.util.MachineUpdateReason
 import io.github.pylonmc.rebar.util.gui.GuiItems
 import io.github.pylonmc.rebar.util.gui.ProgressItem
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.Component.text
+import net.minecraft.server.level.ServerLevel
 import org.bukkit.Material
 import org.bukkit.block.Block
-import org.bukkit.inventory.ItemStack
+import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.craftbukkit.inventory.CraftItemStack
-import net.minecraft.server.level.ServerLevel
+import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataContainer
+import org.bukkit.persistence.PersistentDataType
+import top.mc506lw.rebar.ironfurnaces.IronFurnaceKeys
 import xyz.xenondevs.invui.inventory.VirtualInventory
+import java.util.EnumMap
+import java.util.logging.Level
+import kotlin.math.floor
 
 class FurnaceFuelSystem(
     private val block: Block,
     private val furnaceTier: FurnaceTier,
-    private val fuelInv: VirtualInventory,
-    private val inputInv: VirtualInventory,
-    var fuelEfficiency: Double = 1.0
+    private val fuelInv: VirtualInventory
 ) {
+    @Suppress("UNUSED_PARAMETER")
+    constructor(
+        block: Block,
+        furnaceTier: FurnaceTier,
+        fuelInv: VirtualInventory,
+        inputInv: VirtualInventory,
+        fuelEfficiency: Double = 1.0
+    ) : this(block, furnaceTier, fuelInv) {
+        this.fuelEfficiency = fuelEfficiency
+    }
+
     companion object {
         private val LOGGER = java.util.logging.Logger.getLogger("IronFurnace")
+        private val MACHINE_UPDATE_REASON = MachineUpdateReason()
+        private val FUEL_DURATIONS = EnumMap<Material, Int>(Material::class.java)
     }
 
     var currentFuelTime = 0
-        internal set
+        internal set(value) {
+            field = value.coerceAtLeast(0)
+        }
+
     var fuelRemaining = 0
-        internal set
-    private var burningFuelType: Material? = null
+        internal set(value) {
+            field = value.coerceAtLeast(0)
+        }
 
-    var fuelConsumptionRate: Double = 1.0
-    var speedMultiplier: Double = 1.0
+    var fuelEfficiency = 1.0
+        set(value) {
+            field = value.takeIf { it.isFinite() && it > 0.0 } ?: 1.0
+        }
 
-    val totalSpeedMultiplier: Double
-        get() = furnaceTier.speedMultiplier * speedMultiplier
+    var fuelConsumptionRate = 1.0
+        set(value) {
+            field = value.takeIf { it.isFinite() && it > 0.0 } ?: 1.0
+        }
+
+    var speedMultiplier = 1.0
+        set(value) {
+            field = value.takeIf { it.isFinite() && it > 0.0 } ?: 1.0
+        }
 
     val fuelProgressItem = ProgressItem(GuiItems.background())
-
-    private val noFuelDisplay = ItemStackBuilder
-        .gui(Material.BLAZE_POWDER, "${furnaceTier.name.lowercase()}_fuel_status")
-        .name(Component.translatable("ironfurnaces.gui.fuel_status.name"))
-        .lore(
-            Component.translatable(
-                "ironfurnaces.gui.fuel_status.lore",
-                io.github.pylonmc.rebar.i18n.RebarArgument.of("fuel", Component.translatable("ironfurnaces.gui.no_fuel"))
-            )
-        )
 
     val isBurning: Boolean
         get() = fuelRemaining > 0
 
-    fun consumeFuel() {
-        if (fuelRemaining > 0) return
+    val totalSpeedMultiplier: Double
+        get() = furnaceTier.speedMultiplier * speedMultiplier
 
-        val inputStack = inputInv.getItem(0)
-        val hasInput = inputStack != null && !inputStack.isEmpty()
+    private var burningFuelType: Material? = null
+    private var consumptionFraction = 0.0
+    private var clearDisplayUpdates = 0
 
-        if (!hasInput) return
+    fun consumeFuel(): Boolean {
+        if (isBurning) return true
 
-        val fuelStack = fuelInv.getItem(0) ?: return
-        if (fuelStack.isEmpty()) return
+        val fuelStack = fuelInv.getUnsafeItem(0) ?: return false
+        if (fuelStack.isEmpty) return false
 
         val fuelTime = getFuelTimeFromServer(fuelStack)
-        if (fuelTime <= 0) return
+        if (fuelTime <= 0) return false
 
-        if (fuelStack.amount > 1) {
-            fuelStack.amount = fuelStack.amount - 1
-            fuelInv.setItem(io.github.pylonmc.rebar.util.MachineUpdateReason(), 0, fuelStack)
+        val remainingStack = if (fuelStack.amount > 1) {
+            fuelStack.clone().apply { amount = fuelStack.amount - 1 }
         } else {
-            fuelInv.setItem(io.github.pylonmc.rebar.util.MachineUpdateReason(), 0, null)
+            null
         }
+        if (!fuelInv.setItem(MACHINE_UPDATE_REASON, 0, remainingStack)) return false
 
-        currentFuelTime = ((fuelTime * fuelEfficiency) / totalSpeedMultiplier).toInt().coerceAtLeast(1)
-        fuelRemaining = currentFuelTime
+        val adjustedFuelTime = (fuelTime * fuelEfficiency / totalSpeedMultiplier)
+            .toInt()
+            .coerceAtLeast(1)
+
+        currentFuelTime = adjustedFuelTime
+        fuelRemaining = adjustedFuelTime
         burningFuelType = fuelStack.type
-
-        clearDisplayTimer = 0
-
-        updateFuelProgressDisplay()
+        consumptionFraction = 0.0
+        clearDisplayUpdates = 0
+        updateFuelProgressDisplay(fuelStack.type)
+        return true
     }
 
-    private var clearDisplayTimer = 0
+    fun updateFuelState(elapsedTicks: Int, rateModifier: Double = 1.0) {
+        if (elapsedTicks <= 0) return
 
-    fun updateFuelState(tickInterval: Int) {
-        if (clearDisplayTimer > 0) {
-            clearDisplayTimer--
-            if (clearDisplayTimer == 0) {
-                fuelProgressItem.setTotalTimeTicks(null)
-                fuelProgressItem.setItem(GuiItems.background())
-            }
-            fuelProgressItem.notifyWindows()
+        if (clearDisplayUpdates > 0) {
+            clearDisplayUpdates--
+            if (clearDisplayUpdates == 0) clearFuelDisplay()
             return
         }
 
-        if (fuelRemaining > 0) {
-            val actualConsumption = (tickInterval * fuelConsumptionRate).toInt().coerceAtLeast(1)
-            fuelRemaining -= actualConsumption
+        if (!isBurning) return
 
-            if (fuelRemaining <= 0) {
-                fuelRemaining = 0
-                burningFuelType = null
-                fuelProgressItem.setTotalTimeTicks(currentFuelTime)
-                fuelProgressItem.setRemainingTimeTicks(0)
-                clearDisplayTimer = 2
-            } else {
-                fuelProgressItem.setTotalTimeTicks(currentFuelTime)
-                fuelProgressItem.setRemainingTimeTicks(fuelRemaining)
-                fuelProgressItem.setItem(
-                    ItemStackBuilder.of(ItemStack(burningFuelType ?: Material.AIR))
-                        .name(Component.translatable("ironfurnaces.gui.fuel_status.name"))
-                        .lore(
-                            Component.translatable(
-                                "ironfurnaces.gui.fuel_status.lore",
-                                io.github.pylonmc.rebar.i18n.RebarArgument.of("fuel", ItemStack(burningFuelType!!).displayName())
-                            )
-                        )
-                )
-            }
+        val safeModifier = rateModifier.takeIf { it.isFinite() && it >= 0.0 } ?: 1.0
+        val exactConsumption = elapsedTicks * fuelConsumptionRate * safeModifier + consumptionFraction
+        val consumedTicks = floor(exactConsumption).toInt()
+        consumptionFraction = exactConsumption - consumedTicks
+
+        if (consumedTicks <= 0) return
+
+        fuelRemaining = (fuelRemaining - consumedTicks).coerceAtLeast(0)
+        fuelProgressItem.setRemainingTimeTicks(fuelRemaining)
+
+        if (!isBurning) {
+            burningFuelType = null
+            consumptionFraction = 0.0
+            clearDisplayUpdates = 2
         }
-
         fuelProgressItem.notifyWindows()
     }
 
-    internal fun getFuelTimeFromServer(stack: ItemStack): Int {
-        try {
-            val nmsStack = CraftItemStack.asNMSCopy(stack)
-            val world = block.world
-            val craftWorld = world as org.bukkit.craftbukkit.CraftWorld
-            val serverLevel: ServerLevel = craftWorld.handle
+    fun restore(pdc: PersistentDataContainer) {
+        currentFuelTime = pdc.getOrDefault(IronFurnaceKeys.FUEL_TIME, PersistentDataType.INTEGER, 0)
+        fuelRemaining = pdc.getOrDefault(IronFurnaceKeys.FUEL_REMAINING, PersistentDataType.INTEGER, 0)
+            .coerceAtMost(currentFuelTime)
+        consumptionFraction = pdc.getOrDefault(
+            IronFurnaceKeys.FUEL_CONSUMPTION_FRACTION,
+            PersistentDataType.DOUBLE,
+            0.0
+        ).takeIf { it.isFinite() && it in 0.0..<1.0 } ?: 0.0
 
-            return serverLevel.fuelValues().burnDuration(nmsStack)
-        } catch (e: Exception) {
-            LOGGER.severe("[${furnaceTier.name}] NMS查询失败: ${e.message}")
-            e.printStackTrace()
-            return 0
+        burningFuelType = pdc.get(IronFurnaceKeys.FUEL_TYPE, PersistentDataType.STRING)
+            ?.let(Material::matchMaterial)
+            ?.takeUnless { it.isAir }
+
+        if (fuelRemaining > 0 && burningFuelType == null) {
+            fuelRemaining = 0
+            currentFuelTime = 0
         }
     }
 
-    private fun updateFuelProgressDisplay() {
+    fun write(pdc: PersistentDataContainer) {
+        pdc.set(IronFurnaceKeys.FUEL_TIME, PersistentDataType.INTEGER, currentFuelTime)
+        pdc.set(IronFurnaceKeys.FUEL_REMAINING, PersistentDataType.INTEGER, fuelRemaining)
+        pdc.set(
+            IronFurnaceKeys.FUEL_CONSUMPTION_FRACTION,
+            PersistentDataType.DOUBLE,
+            consumptionFraction
+        )
+
+        val fuelType = burningFuelType
+        if (fuelType == null) {
+            pdc.remove(IronFurnaceKeys.FUEL_TYPE)
+        } else {
+            pdc.set(IronFurnaceKeys.FUEL_TYPE, PersistentDataType.STRING, fuelType.key.asString())
+        }
+    }
+
+    fun refreshDisplay() {
+        val fuelType = burningFuelType
+        if (fuelRemaining > 0 && currentFuelTime > 0 && fuelType != null) {
+            updateFuelProgressDisplay(fuelType)
+            fuelProgressItem.setRemainingTimeTicks(fuelRemaining)
+        } else {
+            clearFuelDisplay()
+        }
+    }
+
+    internal fun getFuelTimeFromServer(stack: ItemStack): Int {
+        FUEL_DURATIONS[stack.type]?.let { return it }
+
+        return try {
+            val serverLevel: ServerLevel = (block.world as CraftWorld).handle
+            serverLevel.fuelValues().burnDuration(CraftItemStack.asNMSCopy(stack)).also { duration ->
+                FUEL_DURATIONS[stack.type] = duration
+            }
+        } catch (exception: Exception) {
+            LOGGER.log(
+                Level.SEVERE,
+                "[${furnaceTier.name}] 无法查询燃料 ${stack.type} 的燃烧时间",
+                exception
+            )
+            0
+        }
+    }
+
+    private fun updateFuelProgressDisplay(material: Material) {
         fuelProgressItem.setTotalTimeTicks(currentFuelTime)
-        fuelProgressItem.setRemainingTimeTicks(currentFuelTime)
+        fuelProgressItem.setRemainingTimeTicks(fuelRemaining)
         fuelProgressItem.setItem(
-            ItemStackBuilder.of(ItemStack(burningFuelType!!))
+            ItemStackBuilder.of(material)
                 .name(Component.translatable("ironfurnaces.gui.fuel_status.name"))
                 .lore(
                     Component.translatable(
                         "ironfurnaces.gui.fuel_status.lore",
-                        io.github.pylonmc.rebar.i18n.RebarArgument.of("fuel", ItemStack(burningFuelType!!).displayName())
+                        RebarArgument.of("fuel", ItemStack.of(material).displayName())
                     )
                 )
         )
+    }
+
+    private fun clearFuelDisplay() {
+        fuelProgressItem.setTotalTimeTicks(null)
+        fuelProgressItem.setItem(GuiItems.background())
+        fuelProgressItem.notifyWindows()
     }
 }

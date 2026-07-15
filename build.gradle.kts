@@ -30,15 +30,18 @@ val minecraftVersion = project.properties["minecraft.version"] as String
 
 dependencies {
     // Paper Dev Bundle ( API + NMS，26.1+ )
-    paperweight.paperDevBundle("26.1.2.build.+")
+    paperweight.paperDevBundle("$minecraftVersion.build.+")
     
     // Rebar
     compileOnly("io.github.pylonmc:rebar:$rebarVersion")
     
     // InvUI
-    compileOnly("xyz.xenondevs.invui:invui:2.1.0")
+    compileOnly("xyz.xenondevs.invui:invui:2.1.1")
     
     compileOnly(kotlin("stdlib"))
+
+    testImplementation(kotlin("test-junit5"))
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 idea {
@@ -94,11 +97,12 @@ paperweight {
 }
 
 tasks.register<Copy>("copyToServer") {
+    dependsOn(tasks.shadowJar)
     from(tasks.shadowJar)
     into("D:\\我的世界资源库\\服务器\\岚域3.0\\plugins")
     outputs.upToDateWhen { false }
 }
 
-tasks.build {
-    finalizedBy("copyToServer")
+tasks.test {
+    useJUnitPlatform()
 }

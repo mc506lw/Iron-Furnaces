@@ -1,5 +1,7 @@
 package top.mc506lw.rebar.ironfurnaces.furnace
 
+import java.util.Locale
+
 enum class FurnaceTier(val smeltTimePerItem: Int) {
     COPPER(180),
     IRON(160),
@@ -11,12 +13,11 @@ enum class FurnaceTier(val smeltTimePerItem: Int) {
     NETHERITE(5),
     RAINBOW(20);
 
-    val speedMultiplier: Double
-        get() = 200.0 / smeltTimePerItem
+    val speedMultiplier: Double = 200.0 / smeltTimePerItem
 
-    val speedLabel: String
-        get() {
-            val mult = speedMultiplier
-            return if (mult == mult.toInt().toDouble()) "${mult.toInt()}x" else "${"%.1f".format(mult)}x"
-        }
+    val speedLabel: String = if (speedMultiplier == speedMultiplier.toInt().toDouble()) {
+        "${speedMultiplier.toInt()}x"
+    } else {
+        "%.1fx".format(Locale.ROOT, speedMultiplier)
+    }
 }

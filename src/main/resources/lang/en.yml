@@ -23,7 +23,7 @@ item:
   rainbow_connector:
     name: "<d>Rainbow Connector"
     lore: |-
-      <gray>Special item for connecting Rainbow components"
+      <gray>Special item for connecting Rainbow components
 
   blast_upgrade:
     name: "<e>Blast Furnace Component"
@@ -39,14 +39,14 @@ item:
   speed_upgrade:
     name: "<b>Speed Upgrade"
     lore: |-
-      <gray>Increases smelting speed by 50%
-      <gray>Stackable
+      <gray>Halves smelting time
+      <gray>Increases fuel consumption by 50%
 
   fuel_upgrade:
     name: "<6>Fuel Upgrade"
     lore: |-
-      <gray>Increases fuel efficiency by 25%
-      <gray>Stackable
+      <gray>Doubles fuel efficiency
+      <gray>Increases smelting time by 25%
 
   industrial_upgrade:
     name: "<7>Industrial Upgrade"
@@ -127,6 +127,7 @@ gui:
 
   back_button:
     name: "<yellow>← Back"
+    lore: ""
 
   upgrade_red:
     name: "<red>🔴 Special Smelting"

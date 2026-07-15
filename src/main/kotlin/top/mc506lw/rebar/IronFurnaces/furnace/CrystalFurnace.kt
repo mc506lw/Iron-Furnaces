@@ -9,17 +9,12 @@ import org.bukkit.entity.Display
 import org.bukkit.entity.ItemDisplay
 import org.bukkit.persistence.PersistentDataContainer
 
-class CrystalFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.CRYSTAL,
-    Material.LIGHT_BLUE_STAINED_GLASS,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class CrystalFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.CRYSTAL, Material.LIGHT_BLUE_STAINED_GLASS)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.CRYSTAL, Material.LIGHT_BLUE_STAINED_GLASS)
 
     companion object {
         private const val BORDER_ENTITY_PREFIX = "edge_"
@@ -33,24 +28,26 @@ class CrystalFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
 
         private data class EdgeDef(
             val name: String,
-            val tx: Double, val ty: Double, val tz: Double,
-            val sx: Double, val sy: Double, val sz: Double
+            val tx: Double,
+            val ty: Double,
+            val tz: Double,
+            val sx: Double,
+            val sy: Double,
+            val sz: Double
         )
 
         private val EDGES = listOf(
             EdgeDef("v_nw", -EDGE_OFFSET, 0.0, -EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
-            EdgeDef("v_ne",  EDGE_OFFSET, 0.0, -EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
-            EdgeDef("v_se",  EDGE_OFFSET, 0.0,  EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
-            EdgeDef("v_sw", -EDGE_OFFSET, 0.0,  EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
-
-            EdgeDef("h_top_n",  0.0,  EDGE_OFFSET, -EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
-            EdgeDef("h_top_e",  EDGE_OFFSET,  EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE),
-            EdgeDef("h_top_s",  0.0,  EDGE_OFFSET,  EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
-            EdgeDef("h_top_w", -EDGE_OFFSET,  EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE),
-
-            EdgeDef("h_bot_n",  0.0, -EDGE_OFFSET, -EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
-            EdgeDef("h_bot_e",  EDGE_OFFSET, -EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE),
-            EdgeDef("h_bot_s",  0.0, -EDGE_OFFSET,  EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
+            EdgeDef("v_ne", EDGE_OFFSET, 0.0, -EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
+            EdgeDef("v_se", EDGE_OFFSET, 0.0, EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
+            EdgeDef("v_sw", -EDGE_OFFSET, 0.0, EDGE_OFFSET, THIN_SCALE, LENGTH_SCALE, THIN_SCALE),
+            EdgeDef("h_top_n", 0.0, EDGE_OFFSET, -EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
+            EdgeDef("h_top_e", EDGE_OFFSET, EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE),
+            EdgeDef("h_top_s", 0.0, EDGE_OFFSET, EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
+            EdgeDef("h_top_w", -EDGE_OFFSET, EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE),
+            EdgeDef("h_bot_n", 0.0, -EDGE_OFFSET, -EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
+            EdgeDef("h_bot_e", EDGE_OFFSET, -EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE),
+            EdgeDef("h_bot_s", 0.0, -EDGE_OFFSET, EDGE_OFFSET, LENGTH_SCALE, THIN_SCALE, THIN_SCALE),
             EdgeDef("h_bot_w", -EDGE_OFFSET, -EDGE_OFFSET, 0.0, THIN_SCALE, THIN_SCALE, LENGTH_SCALE)
         )
     }
@@ -70,11 +67,12 @@ class CrystalFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
     }
 
     private fun createBorder() {
-        val centerLoc = block.location.toCenterLocation()
+        val center = block.location.toCenterLocation()
 
         for (edge in EDGES) {
-            val entityName = "${BORDER_ENTITY_PREFIX}${edge.name}"
-            if (heldEntities.containsKey(entityName)) continue
+            val entityName = "$BORDER_ENTITY_PREFIX${edge.name}"
+            if (getHeldEntity(ItemDisplay::class.java, entityName) != null) continue
+            if (heldEntities.containsKey(entityName)) tryRemoveEntity(entityName)
 
             val transformation = TransformBuilder()
                 .translate(edge.tx, edge.ty, edge.tz)
@@ -86,7 +84,7 @@ class CrystalFurnace(block: Block, context: BlockCreateContext) : AbstractIronFu
                 .itemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED)
                 .brightness(Display.Brightness(15, 15))
                 .transformation(transformation)
-                .build(centerLoc)
+                .build(center)
 
             addEntity(entityName, display)
         }

@@ -23,7 +23,7 @@ item:
   rainbow_connector:
     name: "<light_purple>彩虹连接器"
     lore: |-
-      <gray>用于连接彩虹组件的特殊物品"
+      <gray>用于连接彩虹组件的特殊物品
 
   blast_upgrade:
     name: "<yellow>高炉组件"
@@ -39,14 +39,14 @@ item:
   speed_upgrade:
     name: "<aqua>速度升级"
     lore: |-
-      <gray>提升熔炉50%的烧炼速度
-      <gray>可叠加使用
+      <gray>烧炼时间减半
+      <gray>燃料消耗增加50%
 
   fuel_upgrade:
     name: "<gold>燃料升级"
     lore: |-
-      <gray>提升燃料效率25%
-      <gray>可叠加使用
+      <gray>燃料效率翻倍
+      <gray>烧炼时间增加25%
 
   industrial_upgrade:
     name: "<gray>工业升级"
@@ -58,7 +58,7 @@ item:
     name: "<red>发电机升级"
     lore: |-
       <gray>将多余热量转化为能量
-      <gray>为周围机器供电"
+      <gray>为周围机器供电
 
   copper_furnace:
     name: "<gold>铜熔炉"

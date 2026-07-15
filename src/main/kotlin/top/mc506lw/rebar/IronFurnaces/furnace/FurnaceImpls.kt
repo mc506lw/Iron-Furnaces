@@ -5,93 +5,58 @@ import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.persistence.PersistentDataContainer
 
-class CopperFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.COPPER,
-    Material.COPPER_BLOCK,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class CopperFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.COPPER, Material.COPPER_BLOCK)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.COPPER, Material.COPPER_BLOCK)
 }
 
-class IronFurnaceImpl(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.IRON,
-    Material.IRON_BLOCK,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class IronFurnaceImpl : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.IRON, Material.IRON_BLOCK)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.IRON, Material.IRON_BLOCK)
 }
 
-class GoldFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.GOLD,
-    Material.GOLD_BLOCK,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class GoldFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.GOLD, Material.GOLD_BLOCK)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.GOLD, Material.GOLD_BLOCK)
 }
 
-class DiamondFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.DIAMOND,
-    Material.DIAMOND_BLOCK,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class DiamondFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.DIAMOND, Material.DIAMOND_BLOCK)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.DIAMOND, Material.DIAMOND_BLOCK)
 }
 
-class EmeraldFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.EMERALD,
-    Material.EMERALD_BLOCK,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class EmeraldFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.EMERALD, Material.EMERALD_BLOCK)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.EMERALD, Material.EMERALD_BLOCK)
 }
 
-class ObsidianFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.OBSIDIAN,
-    Material.OBSIDIAN,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class ObsidianFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.OBSIDIAN, Material.OBSIDIAN)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.OBSIDIAN, Material.OBSIDIAN)
 }
 
-class NetheriteFurnace(block: Block, context: BlockCreateContext) : AbstractIronFurnace(
-    block,
-    context,
-    FurnaceTier.NETHERITE,
-    Material.NETHERITE_BLOCK,
-    Material.FURNACE
-) {
-    constructor(block: Block, pdc: PersistentDataContainer) : this(
-        block,
-        BlockCreateContext.Default(null, block)
-    )
+class NetheriteFurnace : AbstractIronFurnace {
+    constructor(block: Block, context: BlockCreateContext) :
+        super(block, context, FurnaceTier.NETHERITE, Material.NETHERITE_BLOCK)
+
+    constructor(block: Block, pdc: PersistentDataContainer) :
+        super(block, pdc, FurnaceTier.NETHERITE, Material.NETHERITE_BLOCK)
 }

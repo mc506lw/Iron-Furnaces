@@ -2,96 +2,92 @@ package top.mc506lw.rebar.ironfurnaces
 
 import io.github.pylonmc.rebar.recipe.RecipeType
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
+import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ShapedRecipe
 import org.bukkit.inventory.recipe.CraftingBookCategory
 
 object FurnaceRecipes {
-
     fun initialize() {
-        initCopperFurnace()
-        initIronFurnace()
-        initGoldFurnace()
-        initDiamondFurnace()
-        initEmeraldFurnace()
-        initObsidianFurnace()
-        initCrystalFurnace()
-        initNetheriteFurnace()
+        register(
+            IronFurnaceKeys.COPPER_FURNACE,
+            IronFurnaceItems.COPPER_FURNACE_ITEM,
+            arrayOf("CCC", "CFC", "CCC"),
+            'C' to Material.COPPER_INGOT,
+            'F' to Material.FURNACE
+        )
+        register(
+            IronFurnaceKeys.IRON_FURNACE,
+            IronFurnaceItems.IRON_FURNACE_ITEM,
+            arrayOf("III", "ICI", "III"),
+            'I' to Material.IRON_INGOT,
+            'C' to IronFurnaceItems.COPPER_FURNACE_ITEM
+        )
+        register(
+            IronFurnaceKeys.GOLD_FURNACE,
+            IronFurnaceItems.GOLD_FURNACE_ITEM,
+            arrayOf("GGG", "GIG", "GBG"),
+            'G' to Material.GOLD_INGOT,
+            'I' to IronFurnaceItems.IRON_FURNACE_ITEM,
+            'B' to Material.GOLD_BLOCK
+        )
+        register(
+            IronFurnaceKeys.DIAMOND_FURNACE,
+            IronFurnaceItems.DIAMOND_FURNACE_ITEM,
+            arrayOf("DDD", "GFG", "DDD"),
+            'D' to Material.DIAMOND,
+            'G' to Material.GLASS,
+            'F' to IronFurnaceItems.GOLD_FURNACE_ITEM
+        )
+        register(
+            IronFurnaceKeys.EMERALD_FURNACE,
+            IronFurnaceItems.EMERALD_FURNACE_ITEM,
+            arrayOf("EEE", "EDE", "EEE"),
+            'E' to Material.EMERALD,
+            'D' to IronFurnaceItems.DIAMOND_FURNACE_ITEM
+        )
+        register(
+            IronFurnaceKeys.OBSIDIAN_FURNACE,
+            IronFurnaceItems.OBSIDIAN_FURNACE_ITEM,
+            arrayOf("OBO", "BFO", "OBO"),
+            'O' to Material.OBSIDIAN,
+            'B' to Material.BLAZE_ROD,
+            'F' to IronFurnaceItems.DIAMOND_FURNACE_ITEM
+        )
+        register(
+            IronFurnaceKeys.CRYSTAL_FURNACE,
+            IronFurnaceItems.CRYSTAL_FURNACE_ITEM,
+            arrayOf("GGG", "GDG", "GEG"),
+            'G' to Material.GLASS,
+            'D' to IronFurnaceItems.DIAMOND_FURNACE_ITEM,
+            'E' to Material.ENDER_EYE
+        )
+        register(
+            IronFurnaceKeys.NETHERITE_FURNACE,
+            IronFurnaceItems.NETHERITE_FURNACE_ITEM,
+            arrayOf("NMN", "MFM", "NSN"),
+            'N' to Material.NETHERITE_INGOT,
+            'M' to Material.MAGMA_CREAM,
+            'F' to IronFurnaceItems.OBSIDIAN_FURNACE_ITEM,
+            'S' to Material.SOUL_SAND
+        )
     }
 
-    private fun initCopperFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.COPPER_FURNACE, IronFurnaceItems.COPPER_FURNACE_ITEM)
-        recipe.shape("CCC", "CFC", "CCC")
-        recipe.setIngredient('C', Material.COPPER_INGOT)
-        recipe.setIngredient('F', Material.FURNACE)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initIronFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.IRON_FURNACE, IronFurnaceItems.IRON_FURNACE_ITEM)
-        recipe.shape("III", "ICI", "III")
-        recipe.setIngredient('I', Material.IRON_INGOT)
-        recipe.setIngredient('C', IronFurnaceItems.COPPER_FURNACE_ITEM)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initGoldFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.GOLD_FURNACE, IronFurnaceItems.GOLD_FURNACE_ITEM)
-        recipe.shape("GGG", "GIG", "GBG")
-        recipe.setIngredient('G', Material.GOLD_INGOT)
-        recipe.setIngredient('I', IronFurnaceItems.IRON_FURNACE_ITEM)
-        recipe.setIngredient('B', Material.GOLD_BLOCK)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initDiamondFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.DIAMOND_FURNACE, IronFurnaceItems.DIAMOND_FURNACE_ITEM)
-        recipe.shape("DDD", "GFG", "DDD")
-        recipe.setIngredient('D', Material.DIAMOND)
-        recipe.setIngredient('G', Material.GLASS)
-        recipe.setIngredient('F', IronFurnaceItems.GOLD_FURNACE_ITEM)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initEmeraldFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.EMERALD_FURNACE, IronFurnaceItems.EMERALD_FURNACE_ITEM)
-        recipe.shape("EEE", "EDE", "EEE")
-        recipe.setIngredient('E', Material.EMERALD)
-        recipe.setIngredient('D', IronFurnaceItems.DIAMOND_FURNACE_ITEM)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initObsidianFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.OBSIDIAN_FURNACE, IronFurnaceItems.OBSIDIAN_FURNACE_ITEM)
-        recipe.shape("OBO", "BFO", "OBO")
-        recipe.setIngredient('O', Material.OBSIDIAN)
-        recipe.setIngredient('B', Material.BLAZE_ROD)
-        recipe.setIngredient('F', IronFurnaceItems.DIAMOND_FURNACE_ITEM)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initCrystalFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.CRYSTAL_FURNACE, IronFurnaceItems.CRYSTAL_FURNACE_ITEM)
-        recipe.shape("GGG", "GDG", "GEG")
-        recipe.setIngredient('G', Material.GLASS)
-        recipe.setIngredient('D', IronFurnaceItems.DIAMOND_FURNACE_ITEM)
-        recipe.setIngredient('E', Material.ENDER_EYE)
-        recipe.setCategory(CraftingBookCategory.MISC)
-        RecipeType.VANILLA_SHAPED.addRecipe(recipe)
-    }
-
-    private fun initNetheriteFurnace() {
-        val recipe = ShapedRecipe(IronFurnaceKeys.NETHERITE_FURNACE, IronFurnaceItems.NETHERITE_FURNACE_ITEM)
-        recipe.shape("NMN", "MFM", "NSN")
-        recipe.setIngredient('N', Material.NETHERITE_INGOT)
-        recipe.setIngredient('M', Material.MAGMA_CREAM)
-        recipe.setIngredient('F', IronFurnaceItems.OBSIDIAN_FURNACE_ITEM)
-        recipe.setIngredient('S', Material.SOUL_SAND)
+    private fun register(
+        key: NamespacedKey,
+        result: ItemStack,
+        shape: Array<String>,
+        vararg ingredients: Pair<Char, Any>
+    ) {
+        val recipe = ShapedRecipe(key, result.clone())
+        recipe.shape(*shape)
+        for ((symbol, ingredient) in ingredients) {
+            when (ingredient) {
+                is Material -> recipe.setIngredient(symbol, ingredient)
+                is ItemStack -> recipe.setIngredient(symbol, ingredient.clone())
+                else -> error("Unsupported recipe ingredient: ${ingredient::class.qualifiedName}")
+            }
+        }
         recipe.setCategory(CraftingBookCategory.MISC)
         RecipeType.VANILLA_SHAPED.addRecipe(recipe)
     }

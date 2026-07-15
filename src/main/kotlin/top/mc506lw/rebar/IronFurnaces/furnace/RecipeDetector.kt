@@ -1,15 +1,19 @@
 package top.mc506lw.rebar.ironfurnaces.furnace
 
+import io.github.pylonmc.rebar.recipe.vanilla.FurnaceRecipeType
+import io.github.pylonmc.rebar.recipe.vanilla.FurnaceRecipeWrapper
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.RecipeChoice
 import top.mc506lw.rebar.ironfurnaces.furnace.UpgradeEffectManager.RecipeCompatibility
+import java.util.EnumMap
 
 object RecipeDetector {
-    private val LOGGER = java.util.logging.Logger.getLogger("IronFurnace-Recipes")
+    private val compatibilityCache = EnumMap<Material, RecipeCompatibility>(Material::class.java)
+    private val furnaceRecipeCache = EnumMap<Material, List<FurnaceRecipeWrapper>>(Material::class.java)
+    private var cachedRecipeCount = -1
 
-    private val recipeCache = mutableMapOf<Material, RecipeCompatibility>()
-
-    private val ORE_MATERIALS = setOf(
+    private val oreMaterials = setOf(
         Material.IRON_ORE,
         Material.GOLD_ORE,
         Material.DIAMOND_ORE,
@@ -26,7 +30,7 @@ object RecipeDetector {
         Material.RAW_COPPER
     )
 
-    private val FOOD_MATERIALS = setOf(
+    private val foodMaterials = setOf(
         Material.BEEF,
         Material.PORKCHOP,
         Material.CHICKEN,
@@ -40,7 +44,7 @@ object RecipeDetector {
         Material.POTATO
     )
 
-    private val LOG_MATERIALS = setOf(
+    private val logMaterials = setOf(
         Material.OAK_LOG,
         Material.SPRUCE_LOG,
         Material.BIRCH_LOG,
@@ -54,58 +58,56 @@ object RecipeDetector {
     )
 
     fun detectRecipeCompatibility(stack: ItemStack?): RecipeCompatibility {
-        if (stack == null) return RecipeCompatibility.ANY
-        if (stack.isEmpty) return RecipeCompatibility.ANY
-
-        val material = stack.type
-        recipeCache[material]?.let { return it }
-
-        val compatibility = classifyMaterial(material)
-        recipeCache[material] = compatibility
-        return compatibility
+        if (stack == null || stack.isEmpty) return RecipeCompatibility.ANY
+        return compatibilityCache.computeIfAbsent(stack.type, ::classifyMaterial)
     }
 
-    private fun classifyMaterial(material: Material): RecipeCompatibility {
-        return when {
-            material in ORE_MATERIALS -> RecipeCompatibility.BLAST
-            material.name.endsWith("_ORE") -> RecipeCompatibility.BLAST
-            material.name.startsWith("RAW_") -> RecipeCompatibility.BLAST
-            material in FOOD_MATERIALS || isFoodMaterial(material) -> RecipeCompatibility.SMOKER
-            material in LOG_MATERIALS || isLogMaterial(material) -> RecipeCompatibility.SMOKER
-            else -> RecipeCompatibility.NORMAL
+    fun matchingFurnaceRecipes(stack: ItemStack): List<FurnaceRecipeWrapper> {
+        val recipes = FurnaceRecipeType.recipes
+        if (recipes.size != cachedRecipeCount) {
+            furnaceRecipeCache.clear()
+            cachedRecipeCount = recipes.size
+        }
+
+        return furnaceRecipeCache.computeIfAbsent(stack.type) { material ->
+            recipes.filter { acceptsMaterial(it.recipe.inputChoice, material) }
         }
     }
 
-    private fun isFoodMaterial(material: Material): Boolean {
-        try {
-            return material.isEdible
-        } catch (e: Exception) {
-            return false
-        }
+    fun canSmeltInBlastFurnace(stack: ItemStack): Boolean = when (detectRecipeCompatibility(stack)) {
+        RecipeCompatibility.BLAST, RecipeCompatibility.ANY -> true
+        else -> false
     }
 
-    private fun isLogMaterial(material: Material): Boolean {
-        return material.name.endsWith("_LOG") ||
-               material.name.endsWith("_WOOD") ||
-               material.name.endsWith("_STEM") ||
-               material.name == "MUSHROOM_STEM"
-    }
-
-    fun canSmeltInBlastFurnace(stack: ItemStack): Boolean {
-        return detectRecipeCompatibility(stack) in listOf(
-            RecipeCompatibility.BLAST,
-            RecipeCompatibility.ANY
-        )
-    }
-
-    fun canSmeltInSmoker(stack: ItemStack): Boolean {
-        return detectRecipeCompatibility(stack) in listOf(
-            RecipeCompatibility.SMOKER,
-            RecipeCompatibility.ANY
-        )
+    fun canSmeltInSmoker(stack: ItemStack): Boolean = when (detectRecipeCompatibility(stack)) {
+        RecipeCompatibility.SMOKER, RecipeCompatibility.ANY -> true
+        else -> false
     }
 
     fun clearCache() {
-        recipeCache.clear()
+        compatibilityCache.clear()
+        furnaceRecipeCache.clear()
+        cachedRecipeCount = -1
     }
+
+    private fun classifyMaterial(material: Material): RecipeCompatibility = when {
+        material in oreMaterials -> RecipeCompatibility.BLAST
+        material.name.endsWith("_ORE") -> RecipeCompatibility.BLAST
+        material.name.startsWith("RAW_") -> RecipeCompatibility.BLAST
+        material in foodMaterials || material.isEdible -> RecipeCompatibility.SMOKER
+        material in logMaterials || isLogMaterial(material) -> RecipeCompatibility.SMOKER
+        else -> RecipeCompatibility.NORMAL
+    }
+
+    private fun acceptsMaterial(choice: RecipeChoice, material: Material): Boolean = when (choice) {
+        is RecipeChoice.MaterialChoice -> material in choice.choices
+        is RecipeChoice.ExactChoice -> choice.choices.any { it.type == material }
+        else -> true
+    }
+
+    private fun isLogMaterial(material: Material): Boolean =
+        material.name.endsWith("_LOG") ||
+            material.name.endsWith("_WOOD") ||
+            material.name.endsWith("_STEM") ||
+            material.name == "MUSHROOM_STEM"
 }

@@ -10,31 +10,26 @@ abstract class IronFurnaceBase : RebarBlock {
 
     protected val furnaceTier: FurnaceTier
     protected val baseMaterial: Material
-    private val guiMaterial: Material
 
     protected constructor(
         block: Block,
         context: BlockCreateContext,
         furnaceTier: FurnaceTier,
-        baseMaterial: Material,
-        guiMaterial: Material = Material.FURNACE
+        baseMaterial: Material
     ) : super(block, context) {
         this.furnaceTier = furnaceTier
         this.baseMaterial = baseMaterial
-        this.guiMaterial = guiMaterial
     }
 
     protected constructor(
         block: Block,
         pdc: PersistentDataContainer,
         furnaceTier: FurnaceTier,
-        baseMaterial: Material,
-        guiMaterial: Material = Material.FURNACE
+        baseMaterial: Material
     ) : super(block, pdc) {
         this.furnaceTier = furnaceTier
         this.baseMaterial = baseMaterial
-        this.guiMaterial = guiMaterial
     }
 
-    fun getGuiMaterial(): Material = guiMaterial
+    fun getGuiMaterial(): Material = Material.FURNACE
 }

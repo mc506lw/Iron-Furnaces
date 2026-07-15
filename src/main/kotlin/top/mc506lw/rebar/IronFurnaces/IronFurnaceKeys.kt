@@ -3,8 +3,9 @@ package top.mc506lw.rebar.ironfurnaces
 import org.bukkit.NamespacedKey
 
 object IronFurnaceKeys {
+    private const val NAMESPACE = "ironfurnaces"
 
-    fun key(name: String) = NamespacedKey("ironfurnaces", name)
+    fun key(name: String) = NamespacedKey(NAMESPACE, name)
 
     val RAINBOW_CORE = key("rainbow_core")
     val RAINBOW_SHELL = key("rainbow_shell")
@@ -27,4 +28,13 @@ object IronFurnaceKeys {
     val FUEL_UPGRADE = key("fuel_upgrade")
     val INDUSTRIAL_UPGRADE = key("industrial_upgrade")
     val GENERATOR_UPGRADE = key("generator_upgrade")
+
+    val FUEL_TIME = key("fuel_time")
+    val FUEL_REMAINING = key("fuel_remaining")
+    val FUEL_TYPE = key("fuel_type")
+    val FUEL_CONSUMPTION_FRACTION = key("fuel_consumption_fraction")
+    val ENERGY_CURRENT = key("energy_current")
+    val ENERGY_TOTAL_PRODUCED = key("energy_total_produced")
+    val RAINBOW_COLOR_INDEX = key("rainbow_color_index")
+    val RAINBOW_COLOR_TICK = key("rainbow_color_tick")
 }

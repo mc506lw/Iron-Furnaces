@@ -1,9 +1,9 @@
 package top.mc506lw.rebar.ironfurnaces.furnace
 
-import org.bukkit.Material
+import io.github.pylonmc.rebar.item.RebarItemSchema
 import org.bukkit.inventory.ItemStack
-import xyz.xenondevs.invui.inventory.VirtualInventory
 import top.mc506lw.rebar.ironfurnaces.upgrades.UpgradeType
+import xyz.xenondevs.invui.inventory.VirtualInventory
 
 enum class FurnaceMode {
     NORMAL,
@@ -34,334 +34,63 @@ class UpgradeEffectManager(
     private val upgradeBlueSlot: VirtualInventory
 ) {
     companion object {
-        private val LOGGER = java.util.logging.Logger.getLogger("IronFurnace-Upgrades")
-
-        private val UPGRADE_ITEMS = mapOf(
-            Material.BLAST_FURNACE to UpgradeType.BLAST,
-            Material.SMOKER to UpgradeType.SMOKER,
-            Material.SUGAR to UpgradeType.SPEED,
-            Material.COAL_BLOCK to UpgradeType.FUEL,
-            Material.IRON_BLOCK to UpgradeType.INDUSTRIAL,
-            Material.REDSTONE_BLOCK to UpgradeType.GENERATOR
-        )
-
-        private val RED_SLOT_TYPES = setOf(UpgradeType.BLAST, UpgradeType.SMOKER)
-        private val GREEN_SLOT_TYPES = setOf(UpgradeType.SPEED, UpgradeType.FUEL)
-        private val BLUE_SLOT_TYPES = setOf(UpgradeType.INDUSTRIAL, UpgradeType.GENERATOR)
+        private val TYPES_BY_KEY = UpgradeType.entries.associateBy(UpgradeType::key)
 
         fun getUpgradeType(stack: ItemStack?): UpgradeType? {
-            if (stack == null || stack.isEmpty()) return null
-            return UPGRADE_ITEMS[stack.type]
+            if (stack == null || stack.isEmpty) return null
+            val schema = RebarItemSchema.fromStack(stack) ?: return null
+            return TYPES_BY_KEY[schema.key]
         }
 
-        fun canPlaceInSlot(upgradeType: UpgradeType, slotIndex: Int): Boolean {
-            return when (slotIndex) {
-                0 -> upgradeType in RED_SLOT_TYPES
-                1 -> upgradeType in GREEN_SLOT_TYPES
-                2 -> upgradeType in BLUE_SLOT_TYPES
-                else -> false
-            }
-        }
+        fun canPlaceInSlot(upgradeType: UpgradeType, slotIndex: Int): Boolean =
+            upgradeType.slot.inventoryIndex == slotIndex
 
         fun isDuplicateUpgrade(
             upgradeType: UpgradeType,
             redSlot: VirtualInventory,
             greenSlot: VirtualInventory,
             blueSlot: VirtualInventory
-        ): Boolean {
-            val slots = listOf(redSlot, greenSlot, blueSlot)
-            var count = 0
+        ): Boolean =
+            getUpgradeType(redSlot.getUnsafeItem(0)) == upgradeType ||
+                getUpgradeType(greenSlot.getUnsafeItem(0)) == upgradeType ||
+                getUpgradeType(blueSlot.getUnsafeItem(0)) == upgradeType
 
-            slots.forEach { slot ->
-                val stack = slot.getItem(0)
-                if (getUpgradeType(stack) == upgradeType) {
-                    count++
-                    if (count >= 1) return true
-                }
-            }
-
-            return false
-        }
     }
 
     private var cachedEffects: UpgradeEffects? = null
-    private var lastSlotHash: Int = 0
 
-    fun getInstalledUpgrades(): Set<UpgradeType> {
-        val upgrades = mutableSetOf<UpgradeType>()
+    fun calculateEffects(): UpgradeEffects = cachedEffects ?: computeEffects().also { cachedEffects = it }
 
-        listOf(upgradeRedSlot, upgradeGreenSlot, upgradeBlueSlot).forEach { slot ->
-            val stack = slot.getItem(0)
-            getUpgradeType(stack)?.let { upgrades.add(it) }
-        }
-
-        return upgrades
-    }
-
-    fun calculateEffects(): UpgradeEffects {
-        val currentHash = calculateSlotHash()
-        if (currentHash == lastSlotHash && cachedEffects != null) {
-            return cachedEffects!!
-        }
-
-        lastSlotHash = currentHash
-        val upgrades = getInstalledUpgrades()
-        cachedEffects = computeUpgradeCombination(upgrades)
-
-        return cachedEffects!!
-    }
-
-    private fun calculateSlotHash(): Int {
-        var hash = 0
-        listOf(upgradeRedSlot, upgradeGreenSlot, upgradeBlueSlot).forEach { slot ->
-            val stack = slot.getItem(0)
-            hash = hash * 31 + (stack?.type?.ordinal ?: -1)
-        }
-        return hash
-    }
-
-    private fun computeUpgradeCombination(upgrades: Set<UpgradeType>): UpgradeEffects {
-        val hasBlast = UpgradeType.BLAST in upgrades
-        val hasSmoker = UpgradeType.SMOKER in upgrades
-        val hasSpeed = UpgradeType.SPEED in upgrades
-        val hasFuel = UpgradeType.FUEL in upgrades
-        val hasIndustrial = UpgradeType.INDUSTRIAL in upgrades
-        val hasGenerator = UpgradeType.GENERATOR in upgrades
-
-        when {
-            hasGenerator && hasBlast -> return createGeneratorBlastEffects(hasSpeed, hasFuel, hasIndustrial)
-            hasGenerator && hasSmoker -> return createGeneratorSmokerEffects(hasSpeed, hasFuel, hasIndustrial)
-            hasGenerator -> return createGeneratorOnlyEffects(hasSpeed, hasFuel, hasIndustrial)
-            hasIndustrial -> return createIndustrialEffects(hasBlast, hasSmoker, hasSpeed, hasFuel, hasGenerator)
-            hasBlast -> return createBlastEffects(hasSpeed, hasFuel)
-            hasSmoker -> return createSmokerEffects(hasSpeed, hasFuel)
-            else -> return createNormalEffects(hasSpeed, hasFuel)
-        }
-    }
-
-    private fun createNormalEffects(hasSpeed: Boolean, hasFuel: Boolean): UpgradeEffects {
-        var speedMult = 1.0
-        var fuelRate = 1.0
-        var fuelEff = 1.0
-        var timeMod = 1.0
-
-        if (hasSpeed) {
-            speedMult *= 2.0
-            timeMod *= 0.5
-            fuelRate *= 1.5
-        }
-
-        if (hasFuel) {
-            fuelEff *= 2.0
-            timeMod *= 1.25
-        }
-
-        return UpgradeEffects(
-            mode = FurnaceMode.NORMAL,
-            speedMultiplier = speedMult,
-            fuelConsumptionRate = fuelRate,
-            fuelEfficiencyBonus = fuelEff,
-            smeltTimeModifier = timeMod,
-            canSmelt = true
-        )
-    }
-
-    private fun createBlastEffects(hasSpeed: Boolean, hasFuel: Boolean): UpgradeEffects {
-        var speedMult = 2.0
-        var fuelRate = 2.0
-        var fuelEff = 1.0
-        var timeMod = 0.5
-
-        if (hasSpeed && hasFuel) {
-            speedMult = 1.6
-            timeMod = 0.5 * 1.25
-        } else if (hasSpeed) {
-            speedMult = 4.0
-            timeMod = 0.5 * 0.5
-            fuelRate = 3.0
-        } else if (hasFuel) {
-            speedMult = 1.6
-            timeMod = 0.5 * 1.25
-        }
-
-        return UpgradeEffects(
-            mode = FurnaceMode.BLAST,
-            speedMultiplier = speedMult,
-            fuelConsumptionRate = fuelRate,
-            fuelEfficiencyBonus = fuelEff,
-            smeltTimeModifier = timeMod,
-            canSmelt = true
-        )
-    }
-
-    private fun createSmokerEffects(hasSpeed: Boolean, hasFuel: Boolean): UpgradeEffects {
-        var speedMult = 2.0
-        var fuelRate = 2.0
-        var fuelEff = 1.0
-        var timeMod = 0.5
-
-        if (hasSpeed && hasFuel) {
-            speedMult = 1.6
-            timeMod = 0.5 * 1.25
-        } else if (hasSpeed) {
-            speedMult = 4.0
-            timeMod = 0.5 * 0.5
-            fuelRate = 3.0
-        } else if (hasFuel) {
-            speedMult = 1.6
-            timeMod = 0.5 * 1.25
-        }
-
-        return UpgradeEffects(
-            mode = FurnaceMode.SMOKER,
-            speedMultiplier = speedMult,
-            fuelConsumptionRate = fuelRate,
-            fuelEfficiencyBonus = fuelEff,
-            smeltTimeModifier = timeMod,
-            canSmelt = true
-        )
-    }
-
-    private fun createIndustrialEffects(
-        hasBlast: Boolean,
-        hasSmoker: Boolean,
-        hasSpeed: Boolean,
-        hasFuel: Boolean,
-        hasGenerator: Boolean
-    ): UpgradeEffects {
-        var speedMult = 1.0
-        var timeMod = 1.0
-
-        if (hasSpeed) {
-            speedMult *= 2.0
-            timeMod *= 0.5
-        }
-
-        if (hasFuel) {
-            timeMod *= 1.25
-        }
-
-        val mode = when {
-            hasBlast -> FurnaceMode.BLAST
-            hasSmoker -> FurnaceMode.SMOKER
-            else -> FurnaceMode.INDUSTRIAL
-        }
-
-        return UpgradeEffects(
-            mode = mode,
-            speedMultiplier = speedMult,
-            smeltTimeModifier = timeMod,
-            outputSlots = 3,
-            usesEnergy = !hasGenerator,
-            canSmelt = !hasGenerator
-        )
-    }
-
-    private fun createGeneratorOnlyEffects(
-        hasSpeed: Boolean,
-        hasFuel: Boolean,
-        hasIndustrial: Boolean
-    ): UpgradeEffects {
-        var powerMult = 1.0
-        var speedMult = 1.0
-
-        if (hasSpeed) {
-            powerMult *= 0.25
-            speedMult *= 2.0
-        }
-
-        if (hasFuel) {
-            powerMult *= 2.0
-            speedMult *= 0.75
-        }
-
-        return UpgradeEffects(
-            mode = FurnaceMode.GENERATOR_ONLY,
-            generatorPowerMultiplier = powerMult,
-            generatorSpeedMultiplier = speedMult,
-            canSmelt = false,
-            outputSlots = if (hasIndustrial) 3 else 1
-        )
-    }
-
-    private fun createGeneratorBlastEffects(
-        hasSpeed: Boolean,
-        hasFuel: Boolean,
-        hasIndustrial: Boolean
-    ): UpgradeEffects {
-        var powerMult = 1.0
-        var speedMult = 1.0
-
-        if (hasSpeed) {
-            powerMult *= 0.25
-            speedMult *= 2.0
-        }
-
-        if (hasFuel) {
-            powerMult *= 2.0
-            speedMult *= 0.75
-        }
-
-        return UpgradeEffects(
-            mode = FurnaceMode.GENERATOR_BLAST,
-            generatorPowerMultiplier = powerMult,
-            generatorSpeedMultiplier = speedMult,
-            canSmelt = false,
-            outputSlots = if (hasIndustrial) 3 else 1
-        )
-    }
-
-    private fun createGeneratorSmokerEffects(
-        hasSpeed: Boolean,
-        hasFuel: Boolean,
-        hasIndustrial: Boolean
-    ): UpgradeEffects {
-        var powerMult = 1.0
-        var speedMult = 1.0
-
-        if (hasSpeed) {
-            powerMult *= 0.25
-            speedMult *= 2.0
-        }
-
-        if (hasFuel) {
-            powerMult *= 2.0
-            speedMult *= 0.75
-        }
-
-        return UpgradeEffects(
-            mode = FurnaceMode.GENERATOR_SMOKER,
-            generatorPowerMultiplier = powerMult,
-            generatorSpeedMultiplier = speedMult,
-            canSmelt = false,
-            outputSlots = if (hasIndustrial) 3 else 1
-        )
+    fun getInstalledUpgrades(): Set<UpgradeType> = buildSet(3) {
+        getUpgradeType(upgradeRedSlot.getUnsafeItem(0))?.let(::add)
+        getUpgradeType(upgradeGreenSlot.getUnsafeItem(0))?.let(::add)
+        getUpgradeType(upgradeBlueSlot.getUnsafeItem(0))?.let(::add)
     }
 
     fun invalidateCache() {
         cachedEffects = null
-        lastSlotHash = 0
     }
 
-    fun getDisplayBlockType(): String {
-        val effects = calculateEffects()
-        return when (effects.mode) {
-            FurnaceMode.BLAST, FurnaceMode.GENERATOR_BLAST -> "blast_furnace"
-            FurnaceMode.SMOKER, FurnaceMode.GENERATOR_SMOKER -> "smoker"
-            else -> "furnace"
-        }
+    fun getDisplayBlockType(): String = when (calculateEffects().mode) {
+        FurnaceMode.BLAST, FurnaceMode.GENERATOR_BLAST -> "blast_furnace"
+        FurnaceMode.SMOKER, FurnaceMode.GENERATOR_SMOKER -> "smoker"
+        else -> "furnace"
     }
 
-    fun isRecipeCompatible(recipeType: RecipeCompatibility): Boolean {
-        val effects = calculateEffects()
-        return when (effects.mode) {
-            FurnaceMode.NORMAL, FurnaceMode.INDUSTRIAL -> true
-            FurnaceMode.BLAST -> recipeType == RecipeCompatibility.BLAST || recipeType == RecipeCompatibility.ANY
-            FurnaceMode.SMOKER -> recipeType == RecipeCompatibility.SMOKER || recipeType == RecipeCompatibility.ANY
-            FurnaceMode.GENERATOR_ONLY,
-            FurnaceMode.GENERATOR_BLAST,
-            FurnaceMode.GENERATOR_SMOKER -> false
-        }
+    fun isRecipeCompatible(recipeType: RecipeCompatibility): Boolean = when (calculateEffects().mode) {
+        FurnaceMode.NORMAL, FurnaceMode.INDUSTRIAL -> true
+        FurnaceMode.BLAST -> recipeType == RecipeCompatibility.BLAST || recipeType == RecipeCompatibility.ANY
+        FurnaceMode.SMOKER -> recipeType == RecipeCompatibility.SMOKER || recipeType == RecipeCompatibility.ANY
+        FurnaceMode.GENERATOR_ONLY,
+        FurnaceMode.GENERATOR_BLAST,
+        FurnaceMode.GENERATOR_SMOKER -> false
+    }
+
+    private fun computeEffects(): UpgradeEffects {
+        val red = getUpgradeType(upgradeRedSlot.getUnsafeItem(0))
+        val green = getUpgradeType(upgradeGreenSlot.getUnsafeItem(0))
+        val blue = getUpgradeType(upgradeBlueSlot.getUnsafeItem(0))
+        return UpgradeEffectCalculator.calculate(red, green, blue)
     }
 
     enum class RecipeCompatibility {
@@ -369,5 +98,146 @@ class UpgradeEffectManager(
         BLAST,
         SMOKER,
         ANY
+    }
+}
+
+internal object UpgradeEffectCalculator {
+    fun calculate(
+        red: UpgradeType?,
+        green: UpgradeType?,
+        blue: UpgradeType?
+    ): UpgradeEffects {
+        val hasBlast = red == UpgradeType.BLAST
+        val hasSmoker = red == UpgradeType.SMOKER
+        val hasSpeed = green == UpgradeType.SPEED
+        val hasFuel = green == UpgradeType.FUEL
+
+        return when (blue) {
+            UpgradeType.GENERATOR -> generatorEffects(
+                when {
+                    hasBlast -> FurnaceMode.GENERATOR_BLAST
+                    hasSmoker -> FurnaceMode.GENERATOR_SMOKER
+                    else -> FurnaceMode.GENERATOR_ONLY
+                },
+                hasSpeed,
+                hasFuel
+            )
+            UpgradeType.INDUSTRIAL -> industrialEffects(hasBlast, hasSmoker, hasSpeed, hasFuel)
+            else -> when {
+                hasBlast -> specializedEffects(FurnaceMode.BLAST, hasSpeed, hasFuel)
+                hasSmoker -> specializedEffects(FurnaceMode.SMOKER, hasSpeed, hasFuel)
+                else -> normalEffects(hasSpeed, hasFuel)
+            }
+        }
+    }
+
+    private fun normalEffects(hasSpeed: Boolean, hasFuel: Boolean): UpgradeEffects {
+        var speedMultiplier = 1.0
+        var fuelConsumptionRate = 1.0
+        var fuelEfficiency = 1.0
+        var smeltTimeModifier = 1.0
+
+        if (hasSpeed) {
+            speedMultiplier *= 2.0
+            smeltTimeModifier *= 0.5
+            fuelConsumptionRate *= 1.5
+        }
+        if (hasFuel) {
+            fuelEfficiency *= 2.0
+            smeltTimeModifier *= 1.25
+        }
+
+        return UpgradeEffects(
+            speedMultiplier = speedMultiplier,
+            fuelConsumptionRate = fuelConsumptionRate,
+            fuelEfficiencyBonus = fuelEfficiency,
+            smeltTimeModifier = smeltTimeModifier
+        )
+    }
+
+    private fun specializedEffects(
+        mode: FurnaceMode,
+        hasSpeed: Boolean,
+        hasFuel: Boolean
+    ): UpgradeEffects {
+        var speedMultiplier = 2.0
+        var fuelConsumptionRate = 2.0
+        var smeltTimeModifier = 0.5
+
+        when {
+            hasSpeed && hasFuel -> {
+                speedMultiplier = 1.6
+                smeltTimeModifier *= 1.25
+            }
+            hasSpeed -> {
+                speedMultiplier = 4.0
+                fuelConsumptionRate = 3.0
+                smeltTimeModifier *= 0.5
+            }
+            hasFuel -> {
+                speedMultiplier = 1.6
+                smeltTimeModifier *= 1.25
+            }
+        }
+
+        return UpgradeEffects(
+            mode = mode,
+            speedMultiplier = speedMultiplier,
+            fuelConsumptionRate = fuelConsumptionRate,
+            smeltTimeModifier = smeltTimeModifier
+        )
+    }
+
+    private fun industrialEffects(
+        hasBlast: Boolean,
+        hasSmoker: Boolean,
+        hasSpeed: Boolean,
+        hasFuel: Boolean
+    ): UpgradeEffects {
+        var speedMultiplier = 1.0
+        var smeltTimeModifier = 1.0
+
+        if (hasSpeed) {
+            speedMultiplier *= 2.0
+            smeltTimeModifier *= 0.5
+        }
+        if (hasFuel) smeltTimeModifier *= 1.25
+
+        return UpgradeEffects(
+            mode = when {
+                hasBlast -> FurnaceMode.BLAST
+                hasSmoker -> FurnaceMode.SMOKER
+                else -> FurnaceMode.INDUSTRIAL
+            },
+            speedMultiplier = speedMultiplier,
+            smeltTimeModifier = smeltTimeModifier,
+            outputSlots = 3,
+            usesEnergy = true
+        )
+    }
+
+    private fun generatorEffects(
+        mode: FurnaceMode,
+        hasSpeed: Boolean,
+        hasFuel: Boolean
+    ): UpgradeEffects {
+        var powerMultiplier = 1.0
+        var speedMultiplier = 1.0
+
+        if (hasSpeed) {
+            powerMultiplier *= 0.25
+            speedMultiplier *= 2.0
+        }
+        if (hasFuel) {
+            powerMultiplier *= 2.0
+            speedMultiplier *= 0.75
+        }
+
+        return UpgradeEffects(
+            mode = mode,
+            generatorPowerMultiplier = powerMultiplier,
+            generatorSpeedMultiplier = speedMultiplier,
+            canSmelt = false
+        )
     }
 }

@@ -1,9 +1,10 @@
 package top.mc506lw.rebar.ironfurnaces
 
 import io.github.pylonmc.rebar.addon.RebarAddon
-import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.Material
-import java.util.*
+import org.bukkit.plugin.java.JavaPlugin
+import top.mc506lw.rebar.ironfurnaces.furnace.RecipeDetector
+import java.util.Locale
 
 class IronFurnaces : JavaPlugin(), RebarAddon {
 
@@ -14,7 +15,6 @@ class IronFurnaces : JavaPlugin(), RebarAddon {
 
     override fun onEnable() {
         instance = this
-
         registerWithRebar()
 
         IronFurnaceItems.initialize()
@@ -23,8 +23,12 @@ class IronFurnaces : JavaPlugin(), RebarAddon {
         IronFurnacePages.initialise()
     }
 
+    override fun onDisable() {
+        RecipeDetector.clearCache()
+    }
+
     override val javaPlugin: JavaPlugin
-        get() = instance
+        get() = this
 
     override val languages: Set<Locale>
         get() = setOf(Locale.CHINESE, Locale.ENGLISH)
