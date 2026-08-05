@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="./readme-header.png" alt="Iron Furnaces Banner" width="100%">
+  <img src="./readme-header.png" alt="Lapis-IronFurnaces Banner" width="100%">
 </p>
 
 <p align="center">
-  <h1>🔥 Iron Furnaces</h1>
+  <h1>🔥 Lapis-IronFurnaces</h1>
   <strong>高级熔炉系统 - 9种等级 · 升级组件 · 美观GUI</strong>
 </p>
 
@@ -16,7 +16,7 @@
 
 ## 📋 简介
 
-**Iron Furnaces** 是 **Rebar 框架的附属插件**，复刻经典模组 **[Iron Furnaces](https://modrinth.com/mod/iron-furnaces)**。
+**Lapis-IronFurnaces** 是 **Rebar 框架的附属插件**，复刻经典模组 **[Iron Furnaces](https://modrinth.com/mod/iron-furnaces)**。
 
 本插件为你的服务器添加**多级高级熔炉**，从铜到下界合金，9种不同速度的熔炉满足你所有需求！
 
@@ -47,7 +47,7 @@
 ### 安装步骤（30秒）
 
 1. **安装 Rebar** - 确保 `plugins` 文件夹已有 Rebar 插件
-2. **下载本插件** - 获取 `IronFurnaces-1.1.2.jar`
+2. **下载本插件** - 获取 `Lapis-IronFurnaces-1.1.2.jar`
 3. **放入服务器** - 将 jar 文件放入 `plugins` 文件夹
 4. **重启服务器** - 输入 `/reload` 或重启服务器
 

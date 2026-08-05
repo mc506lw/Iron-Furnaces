@@ -1,8 +1,8 @@
-addon: "Iron Furnaces"
+addon: "Lapis-IronFurnaces"
 
 guide:
   page:
-    ironfurnaces: "<yellow>Iron Furnaces"
+    ironfurnaces: "<yellow>Lapis-IronFurnaces"
 
 item:
   rainbow_core:

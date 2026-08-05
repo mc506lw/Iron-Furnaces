@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "IronFurnaces"
+rootProject.name = "Lapis-IronFurnaces"
